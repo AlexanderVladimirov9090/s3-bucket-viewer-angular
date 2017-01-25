@@ -1,0 +1,14 @@
+{
+  "name": "s3-bucket-viewer-angular",
+  "description": "",
+  "version": "0.1.0",
+  "homepage": "https://github.com/mugglmenzel/s3-bucket-viewer-angular",
+  "license": "Apache 2.0",
+  "private": true,
+  "dependencies": {
+    "angular": "~1.5.0",
+    "angular-loader": "~1.5.0",
+    "bootstrap": "^3.3.7",
+    "aws-sdk-js": "^2.7.20"
+  }
+}
