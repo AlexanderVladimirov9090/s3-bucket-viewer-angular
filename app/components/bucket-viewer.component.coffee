@@ -2,11 +2,12 @@
 # Created by menzelmi on 24/01/2017.
 #
 class BucketViewerController
+
   constructor: (S3) ->
-    console.log "s3 is #{JSON.stringify(S3)}"
-    S3.list('s3-bucket-viewer-demo').then((data) =>
+    bucketName = 's3-bucket-viewer-demo'
+    S3.list(bucketName).then((data) =>
       @files = data.map((el) ->
-        el.url = S3.downloadLink('s3-bucket-viewer-demo', el.Key)
+        el.url = S3.downloadLink(bucketName, el.Key)
         el
       )
     )

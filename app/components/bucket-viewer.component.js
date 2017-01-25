@@ -4,11 +4,12 @@
 
   BucketViewerController = (function() {
     function BucketViewerController(S3) {
-      console.log("s3 is " + (JSON.stringify(S3)));
-      S3.list('s3-bucket-viewer-demo').then((function(_this) {
+      var bucketName;
+      bucketName = 's3-bucket-viewer-demo';
+      S3.list(bucketName).then((function(_this) {
         return function(data) {
           return _this.files = data.map(function(el) {
-            el.url = S3.downloadLink('s3-bucket-viewer-demo', el.Key);
+            el.url = S3.downloadLink(bucketName, el.Key);
             return el;
           });
         };
