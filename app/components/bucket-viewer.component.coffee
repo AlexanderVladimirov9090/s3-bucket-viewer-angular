@@ -4,13 +4,38 @@
 class BucketViewerController
 
   constructor: (S3) ->
-    bucketName = 's3-bucket-viewer-demo'
-    S3.list(bucketName).then((data) =>
-      @files = data.map((el) ->
-        el.url = S3.downloadLink(bucketName, el.Key)
-        el
-      )
+    @prefix = ''
+    @bucketName = 's3-bucket-viewer-demo'
+    @s3 = S3
+    @refresh()
+
+  open: (prefix) =>
+    @prefix = @prefix + prefix
+    @refresh()
+
+  refresh: =>
+    console.log "checking for bucket #{@bucketName} with prefix #{@prefix}"
+    @s3.list(@bucketName, @prefix).then((data) =>
+      @files = data
+        .map (el) =>
+          el.Key = el.Key.substr(@prefix.length)
+          el
+        .map (el) =>
+          if el.Key.indexOf('/') > -1
+            el.type = 'folder'
+            el.Key = el.Key.substr(0, el.Key.indexOf('/') + 1)
+          else
+            el.type = 'file'
+            el.Key = el.Key.substr(el.Key.lastIndexOf('/') + 1)
+
+          el.url = @s3.downloadLink(@bucketName, el.Key)
+          el
+        .reduce((a, b) ->
+          a.push(b) if a.map((el) -> el.Key).indexOf(b.Key) < 0
+          a
+        , [])
     )
+
 
 
 angular.module('DemoApp').component('bucketViewer',

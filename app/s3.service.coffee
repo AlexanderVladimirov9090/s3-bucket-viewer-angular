@@ -16,10 +16,10 @@ class S3Client
 s3Client = new S3Client().client()
 
 angular.module('DemoApp').factory('S3', ['$q', ($q) ->
-  list: (bucketName) ->
+  list: (bucketName, prefix) ->
     filesDefer = $q.defer()
 
-    s3Client.listObjects({Bucket: bucketName}, (err, data) ->
+    s3Client.listObjects({Bucket: bucketName, Prefix: prefix}, (err, data) ->
       if err?
         console.log "error: #{err}"
         filesDefer.reject(err)

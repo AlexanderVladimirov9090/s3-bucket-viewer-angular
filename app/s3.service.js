@@ -24,11 +24,12 @@
   angular.module('DemoApp').factory('S3', [
     '$q', function($q) {
       return {
-        list: function(bucketName) {
+        list: function(bucketName, prefix) {
           var filesDefer;
           filesDefer = $q.defer();
           s3Client.listObjects({
-            Bucket: bucketName
+            Bucket: bucketName,
+            Prefix: prefix
           }, function(err, data) {
             if (err != null) {
               console.log("error: " + err);
