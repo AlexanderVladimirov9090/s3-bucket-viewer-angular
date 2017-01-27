@@ -9,8 +9,17 @@ class BucketViewerController
     @s3 = S3
     @refresh()
 
+  home: =>
+    @prefix = ''
+    @refresh()
+
   open: (prefix) =>
     @prefix = @prefix + prefix
+    @refresh()
+
+  close: =>
+    @prefix = @prefix.slice(0, -1) if @prefix.slice(-1) is '/'
+    @prefix = @prefix.substr(0, @prefix.lastIndexOf('/') + 1)
     @refresh()
 
   refresh: =>
@@ -28,7 +37,7 @@ class BucketViewerController
             el.type = 'file'
             el.Key = el.Key.substr(el.Key.lastIndexOf('/') + 1)
 
-          el.url = @s3.downloadLink(@bucketName, el.Key)
+          el.url = @s3.downloadLink(@bucketName, @prefix  + el.Key)
           el
         .reduce((a, b) ->
           a.push(b) if a.map((el) -> el.Key).indexOf(b.Key) < 0

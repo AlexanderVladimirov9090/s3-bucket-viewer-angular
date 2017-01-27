@@ -6,15 +6,30 @@
   BucketViewerController = (function() {
     function BucketViewerController(S3) {
       this.refresh = bind(this.refresh, this);
+      this.close = bind(this.close, this);
       this.open = bind(this.open, this);
+      this.home = bind(this.home, this);
       this.prefix = '';
       this.bucketName = 's3-bucket-viewer-demo';
       this.s3 = S3;
       this.refresh();
     }
 
+    BucketViewerController.prototype.home = function() {
+      this.prefix = '';
+      return this.refresh();
+    };
+
     BucketViewerController.prototype.open = function(prefix) {
       this.prefix = this.prefix + prefix;
+      return this.refresh();
+    };
+
+    BucketViewerController.prototype.close = function() {
+      if (this.prefix.slice(-1) === '/') {
+        this.prefix = this.prefix.slice(0, -1);
+      }
+      this.prefix = this.prefix.substr(0, this.prefix.lastIndexOf('/') + 1);
       return this.refresh();
     };
 
@@ -33,7 +48,7 @@
               el.type = 'file';
               el.Key = el.Key.substr(el.Key.lastIndexOf('/') + 1);
             }
-            el.url = _this.s3.downloadLink(_this.bucketName, el.Key);
+            el.url = _this.s3.downloadLink(_this.bucketName, _this.prefix + el.Key);
             return el;
           }).reduce(function(a, b) {
             if (a.map(function(el) {
