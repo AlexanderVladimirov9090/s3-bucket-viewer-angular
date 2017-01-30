@@ -2,6 +2,9 @@
 
 The present project provides a AngularJS (1.x) component that can be reused to display a browser for S3 bucket contents.
 
+__[Visit the Demo](http://s3-bucket-viewer-demo.s3-website.eu-central-1.amazonaws.com/
+)__
+
 ## Usage
 The reusable code of the AngularJS component can be found in the folder [./app/component/](./app/component/). After integrating the code into your AngularJS project (mind referencing the js files in your HTML code), you can load the component with:
 
