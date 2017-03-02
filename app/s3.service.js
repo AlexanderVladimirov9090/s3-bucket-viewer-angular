@@ -22,29 +22,38 @@
   s3Client = new S3Client().client();
 
   angular.module('DemoApp').factory('S3', [
-    '$q', function($q) {
+    function() {
       return {
         list: function(bucketName, prefix) {
-          var filesDefer;
-          filesDefer = $q.defer();
-          s3Client.listObjects({
-            Bucket: bucketName,
-            Prefix: prefix
-          }, function(err, data) {
-            if (err != null) {
-              console.log("error: " + err);
-              return filesDefer.reject(err);
-            } else {
-              return filesDefer.resolve(data.Contents);
-            }
+          console.log("ListObjects on S3 API with bucket " + (JSON.stringify(bucketName)) + " and prefix " + (JSON.stringify(prefix)));
+          return new Promise(function(resolve, reject) {
+            return s3Client.listObjects({
+              Bucket: bucketName,
+              Prefix: prefix
+            }, function(err, data) {
+              if (err != null) {
+                console.log("[S3Client] error while fetching object list: " + (JSON.stringify(err)));
+                return reject(err);
+              } else {
+                return resolve(data.Contents);
+              }
+            });
           });
-          return filesDefer.promise;
         },
         downloadLink: function(bucketName, objectName) {
-          return s3Client.getSignedUrl('getObject', {
-            Bucket: bucketName,
-            Key: objectName,
-            Expires: 300
+          return new Promise(function(resolve, reject) {
+            return s3Client.getSignedUrl('getObject', {
+              Bucket: bucketName,
+              Key: objectName,
+              Expires: 300
+            }, function(err, data) {
+              if (err != null) {
+                console.log("[S3Client] error while fetching download link: " + (JSON.stringify(err)));
+                return reject(err);
+              } else {
+                return resolve(data);
+              }
+            });
           });
         }
       };

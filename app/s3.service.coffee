@@ -27,21 +27,28 @@ class S3Client
 
 s3Client = new S3Client().client()
 
-angular.module('DemoApp').factory('S3', ['$q', ($q) ->
+angular.module('DemoApp').factory('S3', [ ->
   list: (bucketName, prefix) ->
-    filesDefer = $q.defer()
-
-    s3Client.listObjects({Bucket: bucketName, Prefix: prefix}, (err, data) ->
-      if err?
-        console.log "error: #{err}"
-        filesDefer.reject(err)
-      else
-        filesDefer.resolve(data.Contents)
+    console.log "ListObjects on S3 API with bucket #{JSON.stringify(bucketName)} and prefix #{JSON.stringify(prefix)}"
+    new Promise((resolve, reject) ->
+      s3Client.listObjects({Bucket: bucketName, Prefix: prefix}, (err, data) ->
+        if err?
+          console.log "[S3Client] error while fetching object list: #{JSON.stringify(err)}"
+          reject(err)
+        else
+          resolve(data.Contents)
+      )
     )
-    filesDefer.promise
-
 
   downloadLink: (bucketName, objectName) ->
-    s3Client.getSignedUrl('getObject', {Bucket: bucketName, Key: objectName, Expires: 300})
+    new Promise((resolve, reject) ->
+      s3Client.getSignedUrl('getObject', {Bucket: bucketName, Key: objectName, Expires: 300}, (err, data) ->
+        if err?
+          console.log "[S3Client] error while fetching download link: #{JSON.stringify(err)}"
+          reject(err)
+        else
+          resolve(data)
+      )
+    )
 
 ])

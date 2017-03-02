@@ -4,16 +4,20 @@
     bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   BucketViewerController = (function() {
-    function BucketViewerController(S3) {
+    function BucketViewerController(S3, $scope) {
       this.refresh = bind(this.refresh, this);
+      this.updateFiles = bind(this.updateFiles, this);
       this.close = bind(this.close, this);
       this.open = bind(this.open, this);
       this.home = bind(this.home, this);
-      this.prefix = '';
-      this.bucketName = 's3-bucket-viewer-demo';
+      this.$onInit = bind(this.$onInit, this);
+      this.scope = $scope;
       this.s3 = S3;
-      this.refresh();
     }
+
+    BucketViewerController.prototype.$onInit = function() {
+      return this.refresh();
+    };
 
     BucketViewerController.prototype.home = function() {
       this.prefix = '';
@@ -33,11 +37,25 @@
       return this.refresh();
     };
 
+    BucketViewerController.prototype.updateFiles = function(newFiles) {
+      this.files = newFiles;
+      return this.scope.$digest();
+    };
+
     BucketViewerController.prototype.refresh = function() {
-      console.log("checking for bucket " + this.bucketName + " with prefix " + this.prefix);
-      return this.s3.list(this.bucketName, this.prefix).then((function(_this) {
+      return Promise.all(this.bucketNames.trim().replace(' ', '').split(',').map((function(_this) {
+        return function(bucketName) {
+          return _this.s3.list(bucketName, _this.prefix);
+        };
+      })(this))).then((function(_this) {
+        return function(lists) {
+          return lists.reduce(function(arr, val) {
+            return arr.concat(val);
+          }, []);
+        };
+      })(this)).then((function(_this) {
         return function(data) {
-          return _this.files = data.map(function(el) {
+          return data.map(function(el) {
             el.Key = el.Key.substr(_this.prefix.length);
             return el;
           }).map(function(el) {
@@ -48,7 +66,7 @@
               el.type = 'file';
               el.Key = el.Key.substr(el.Key.lastIndexOf('/') + 1);
             }
-            el.url = _this.s3.downloadLink(_this.bucketName, _this.prefix + el.Key);
+            el.url = "about:home";
             return el;
           }).reduce(function(a, b) {
             if (a.map(function(el) {
@@ -59,7 +77,7 @@
             return a;
           }, []);
         };
-      })(this));
+      })(this)).then(this.updateFiles);
     };
 
     return BucketViewerController;
@@ -68,7 +86,11 @@
 
   angular.module('DemoApp').component('bucketViewer', {
     templateUrl: 'components/bucket-viewer.template.html',
-    controller: ['S3', BucketViewerController]
+    controller: ['S3', '$scope', BucketViewerController],
+    bindings: {
+      bucketNames: '@',
+      prefix: '@'
+    }
   });
 
 }).call(this);

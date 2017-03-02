@@ -15,10 +15,11 @@
 #
 class BucketViewerController
 
-  constructor: (S3) ->
-    @prefix = ''
-    @bucketName = 's3-bucket-viewer-demo'
+  constructor: (S3, $scope) ->
+    @scope = $scope
     @s3 = S3
+
+  $onInit: =>
     @refresh()
 
   home: =>
@@ -34,33 +35,49 @@ class BucketViewerController
     @prefix = @prefix.substr(0, @prefix.lastIndexOf('/') + 1)
     @refresh()
 
-  refresh: =>
-    console.log "checking for bucket #{@bucketName} with prefix #{@prefix}"
-    @s3.list(@bucketName, @prefix).then((data) =>
-      @files = data
-        .map (el) =>
-          el.Key = el.Key.substr(@prefix.length)
-          el
-        .map (el) =>
-          if el.Key.indexOf('/') > -1
-            el.type = 'folder'
-            el.Key = el.Key.substr(0, el.Key.indexOf('/') + 1)
-          else
-            el.type = 'file'
-            el.Key = el.Key.substr(el.Key.lastIndexOf('/') + 1)
+  updateFiles: (newFiles) =>
+    @files = newFiles
+    @scope.$digest()
 
-          el.url = @s3.downloadLink(@bucketName, @prefix  + el.Key)
-          el
-        .reduce((a, b) ->
-          a.push(b) if a.map((el) -> el.Key).indexOf(b.Key) < 0
-          a
+
+  refresh: =>
+    Promise.all(@bucketNames.trim().replace(' ', '').split(',').map((bucketName) => @s3.list(bucketName, @prefix)))
+      .then((lists) =>
+        lists.reduce((arr, val) ->
+          arr.concat(val)
         , [])
-    )
+      ).then((data) =>
+        data
+          .map (el) =>
+            el.Key = el.Key.substr(@prefix.length)
+            el
+          .map (el) =>
+            if el.Key.indexOf('/') > -1
+              el.type = 'folder'
+              el.Key = el.Key.substr(0, el.Key.indexOf('/') + 1)
+            else
+              el.type = 'file'
+              el.Key = el.Key.substr(el.Key.lastIndexOf('/') + 1)
+
+            el.url = "about:home"
+            #@s3.downloadLink(bucketName, @prefix  + el.Key).then((url) -> el.url = url) if el.type is 'file'
+            el
+          .reduce((a, b) ->
+            a.push(b) if a.map((el) -> el.Key).indexOf(b.Key) < 0
+            a
+          , [])
+      ).then(@updateFiles)
+
+
+
 
 
 
 angular.module('DemoApp').component('bucketViewer',
 #Note: The URL is relative to our `index.html` file
   templateUrl: 'components/bucket-viewer.template.html'
-  controller: ['S3', BucketViewerController]
+  controller: ['S3', '$scope', BucketViewerController]
+  bindings:
+    bucketNames: '@'
+    prefix: '@'
 )
