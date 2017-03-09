@@ -18,22 +18,30 @@ class BucketViewerController
   constructor: (S3, $scope) ->
     @scope = $scope
     @s3 = S3
+    @currentPrefix = ''
 
   $onInit: =>
     @refresh()
 
   home: =>
-    @prefix = ''
+    @currentPrefix = ''
     @refresh()
 
   open: (prefix) =>
-    @prefix = @prefix + prefix
+    @currentPrefix = @currentPrefix + prefix
     @refresh()
 
   close: =>
-    @prefix = @prefix.slice(0, -1) if @prefix.slice(-1) is '/'
-    @prefix = @prefix.substr(0, @prefix.lastIndexOf('/') + 1)
+    @currentPrefix = @currentPrefix.slice(0, -1) if @currentPrefix.slice(-1) is '/'
+    @currentPrefix = @currentPrefix.substr(0, @currentPrefix.lastIndexOf('/') + 1)
     @refresh()
+
+
+  prefix: =>
+    @basePrefix + @currentPrefix
+
+  bucketNamesList: =>
+    @bucketNames.trim().replace(' ', '').split(',')
 
   updateFiles: (newFiles) =>
     @files = newFiles
@@ -41,7 +49,7 @@ class BucketViewerController
 
 
   refresh: =>
-    Promise.all(@bucketNames.trim().replace(' ', '').split(',').map((bucketName) => @s3.list(bucketName, @prefix)))
+    Promise.all(@bucketNamesList().map((bucketName) => @s3.list(bucketName, @prefix())))
       .then((lists) =>
         lists.reduce((arr, val) ->
           arr.concat(val)
@@ -49,7 +57,7 @@ class BucketViewerController
       ).then((data) =>
         data
           .map (el) =>
-            el.Key = el.Key.substr(@prefix.length)
+            el.Key = el.Key.substr(@prefix().length)
             el
           .map (el) =>
             if el.Key.indexOf('/') > -1
@@ -79,5 +87,5 @@ angular.module('DemoApp').component('bucketViewer',
   controller: ['S3', '$scope', BucketViewerController]
   bindings:
     bucketNames: '@'
-    prefix: '@'
+    basePrefix: '@'
 )

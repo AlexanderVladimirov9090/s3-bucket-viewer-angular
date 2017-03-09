@@ -7,12 +7,15 @@
     function BucketViewerController(S3, $scope) {
       this.refresh = bind(this.refresh, this);
       this.updateFiles = bind(this.updateFiles, this);
+      this.bucketNamesList = bind(this.bucketNamesList, this);
+      this.prefix = bind(this.prefix, this);
       this.close = bind(this.close, this);
       this.open = bind(this.open, this);
       this.home = bind(this.home, this);
       this.$onInit = bind(this.$onInit, this);
       this.scope = $scope;
       this.s3 = S3;
+      this.currentPrefix = '';
     }
 
     BucketViewerController.prototype.$onInit = function() {
@@ -20,21 +23,29 @@
     };
 
     BucketViewerController.prototype.home = function() {
-      this.prefix = '';
+      this.currentPrefix = '';
       return this.refresh();
     };
 
     BucketViewerController.prototype.open = function(prefix) {
-      this.prefix = this.prefix + prefix;
+      this.currentPrefix = this.currentPrefix + prefix;
       return this.refresh();
     };
 
     BucketViewerController.prototype.close = function() {
-      if (this.prefix.slice(-1) === '/') {
-        this.prefix = this.prefix.slice(0, -1);
+      if (this.currentPrefix.slice(-1) === '/') {
+        this.currentPrefix = this.currentPrefix.slice(0, -1);
       }
-      this.prefix = this.prefix.substr(0, this.prefix.lastIndexOf('/') + 1);
+      this.currentPrefix = this.currentPrefix.substr(0, this.currentPrefix.lastIndexOf('/') + 1);
       return this.refresh();
+    };
+
+    BucketViewerController.prototype.prefix = function() {
+      return this.basePrefix + this.currentPrefix;
+    };
+
+    BucketViewerController.prototype.bucketNamesList = function() {
+      return this.bucketNames.trim().replace(' ', '').split(',');
     };
 
     BucketViewerController.prototype.updateFiles = function(newFiles) {
@@ -43,9 +54,9 @@
     };
 
     BucketViewerController.prototype.refresh = function() {
-      return Promise.all(this.bucketNames.trim().replace(' ', '').split(',').map((function(_this) {
+      return Promise.all(this.bucketNamesList().map((function(_this) {
         return function(bucketName) {
-          return _this.s3.list(bucketName, _this.prefix);
+          return _this.s3.list(bucketName, _this.prefix());
         };
       })(this))).then((function(_this) {
         return function(lists) {
@@ -56,7 +67,7 @@
       })(this)).then((function(_this) {
         return function(data) {
           return data.map(function(el) {
-            el.Key = el.Key.substr(_this.prefix.length);
+            el.Key = el.Key.substr(_this.prefix().length);
             return el;
           }).map(function(el) {
             if (el.Key.indexOf('/') > -1) {
@@ -89,7 +100,7 @@
     controller: ['S3', '$scope', BucketViewerController],
     bindings: {
       bucketNames: '@',
-      prefix: '@'
+      basePrefix: '@'
     }
   });
 
